@@ -1,6 +1,6 @@
-# flutter_sqflite
+# Flutter SQFlite
 
-A new Flutter application.
+<img src="https://user-images.githubusercontent.com/30998350/54428205-bdd86580-4742-11e9-9067-7be32f027023.png" alt="alt text" width="250" height="450">
 
 ## Getting Started
 
