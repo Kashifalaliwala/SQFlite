@@ -74,7 +74,7 @@ class Helper {
     if (maps.length > 0) {
       maps.forEach((f) {
         user.add(User.fromMap(f));
-          print("getAllUsers"+ User.fromMap(f).toString());
+//          print("getAllUsers"+ User.fromMap(f).toString());
       });
     }
     return user;

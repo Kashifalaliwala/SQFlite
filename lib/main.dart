@@ -20,9 +20,9 @@ class MyApp extends StatelessWidget {
           appBarTheme: AppBarTheme(
               textTheme: TextTheme(
                   title: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                  )))),
+            color: Colors.white,
+            fontSize: 20,
+          )))),
       home: MyHomePage(title: 'SQFlite'),
     );
   }
@@ -47,6 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final GlobalKey<AnimatedListState> _listKey = GlobalKey();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _autoValidate = false;
+  ScrollController _scrollController;
 
   @override
   Widget build(BuildContext context) {
@@ -55,17 +56,95 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: getAllUser(),
-      floatingActionButton:  FloatingActionButton(
-          onPressed: () => openAlertBox(null),
-          tooltip: 'Increment',
-          backgroundColor: Color(0xff00bfa5),
-          child: Icon(Icons.add),
-        ),
+      floatingActionButton: _buildFab(),
       // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 
-  /// openAlertBox to add user
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = new ScrollController();
+    _scrollController.addListener(() => setState(() {}));
+  }
+
+  Widget _buildFab() {
+    bool visibilityFlag = true;
+    if (_scrollController.hasClients) {
+      visibilityFlag = false;
+      if (_scrollController.position.userScrollDirection ==
+          ScrollDirection.forward) {
+        visibilityFlag = true;
+      }
+    }
+
+    return new Visibility(
+      visible: visibilityFlag,
+      child: new FloatingActionButton(
+        onPressed: () => openAlertBox(null),
+        tooltip: 'Increment',
+        backgroundColor: Color(0xff00bfa5),
+        child: Icon(Icons.add),
+      ),
+    );
+  }
+
+  ///edit User
+  editUser(int id) {
+    if (_formKey.currentState.validate()) {
+      _formKey.currentState.save();
+      var user = User();
+      user.id = id;
+      user.name = teNameController.text;
+      user.phone = tePhoneController.text;
+      user.email = teEmailController.text;
+      var dbHelper = Helper();
+      dbHelper.update(user).then((update) {
+        teNameController.text = "";
+        tePhoneController.text = "";
+        teEmailController.text = "";
+        Navigator.of(context).pop();
+        showtoast("Data Saved successfully");
+        setState(() {
+          getAllUser();
+        });
+      });
+    } else {
+//    If all data are not valid then start auto validation.
+      setState(() {
+        _autoValidate = true;
+      });
+    }
+  }
+
+  ///add User Method
+  addUser() {
+    if (_formKey.currentState.validate()) {
+      _formKey.currentState.save();
+      var user = User();
+      user.name = teNameController.text;
+      user.phone = tePhoneController.text;
+      user.email = teEmailController.text;
+      var dbHelper = Helper();
+      dbHelper.insert(user);
+      teNameController.text = "";
+      tePhoneController.text = "";
+      teEmailController.text = "";
+      Navigator.of(context).pop();
+      setState(() {
+        getAllUser();
+      });
+
+      showtoast("Successfully Added Data");
+    } else {
+//    If all data are not valid then start auto validation.
+      setState(() {
+        _autoValidate = true;
+      });
+    }
+  }
+
+  /// openAlertBox to add/edit user
   openAlertBox(User user) {
     if (user != null) {
       teNameController.text = user.name;
@@ -195,11 +274,11 @@ class _MyHomePageState extends State<MyHomePage> {
     RegExp regex = new RegExp(pattern);
     if (value.trim().length != 10)
       return 'Mobile Number must be of 10 digit';
-    else if(value.startsWith('+', 0)) {
+    else if (value.startsWith('+', 0)) {
       return 'Mobile Number should not contain +91';
-    } else if(value.trim().contains(" ")) {
+    } else if (value.trim().contains(" ")) {
       return 'Blank space is not allowed';
-    } else if(!regex.hasMatch(value)) {
+    } else if (!regex.hasMatch(value)) {
       return 'Characters are not allowed';
     } else
       return null;
@@ -217,77 +296,12 @@ class _MyHomePageState extends State<MyHomePage> {
       return null;
   }
 
-  ///edit User
-  editUser(int id) {
-    if (_formKey.currentState.validate()) {
-      _formKey.currentState.save();
-      var user = User();
-      user.id = id;
-      user.name = teNameController.text;
-      user.phone = tePhoneController.text;
-      user.email = teEmailController.text;
-      var dbHelper = Helper();
-      dbHelper.update(user).then((update) {
-        teNameController.text = "";
-        tePhoneController.text = "";
-        teEmailController.text = "";
-        Navigator.of(context).pop();
-        showtoast("Data Saved successfully");
-        setState(() {
-          getAllUser();
-        });
-      });
-    } else {
-//    If all data are not valid then start auto validation.
-      setState(() {
-        _autoValidate = true;
-      });
-    }
-  }
-
-  ///add User Method
-  addUser() {
-    if (_formKey.currentState.validate()) {
-      _formKey.currentState.save();
-      var user = User();
-      user.name = teNameController.text;
-      user.phone = tePhoneController.text;
-      user.email = teEmailController.text;
-      var dbHelper = Helper();
-      dbHelper.insert(user);
-      teNameController.text = "";
-      tePhoneController.text = "";
-      teEmailController.text = "";
-      Navigator.of(context).pop();
-      setState(() {
-        getAllUser();
-      });
-
-      showtoast("Successfully Added Data");
-    } else {
-//    If all data are not valid then start auto validation.
-      setState(() {
-        _autoValidate = true;
-      });
-    }
-  }
-
   /// Get all users data
   getAllUser() {
     return FutureBuilder(
         future: _getData(),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
-          switch (snapshot.connectionState) {
-            case ConnectionState.none:
-            case ConnectionState.waiting:
-              return showProgress();
-            default:
-              if (snapshot.hasError)
-                return new Text('Error: ${snapshot.error}');
-              else {
-                return createListView(context, snapshot);
-              }
-          }
+          return createListView(context, snapshot);
         });
   }
 
@@ -304,13 +318,18 @@ class _MyHomePageState extends State<MyHomePage> {
   ///create List View with Animation
   Widget createListView(BuildContext context, AsyncSnapshot snapshot) {
     values = snapshot.data;
-    return new AnimatedList(
-        key: _listKey,
-        shrinkWrap: true,
-        initialItemCount: values.length,
-        itemBuilder: (BuildContext context, int index, animation) {
-          return _buildItem(values[index], animation, index);
-        });
+    if (values != null) {
+      showProgress();
+      return new AnimatedList(
+          key: _listKey,
+          controller: _scrollController,
+          shrinkWrap: true,
+          initialItemCount: values.length,
+          itemBuilder: (BuildContext context, int index, animation) {
+            return _buildItem(values[index], animation, index);
+          });
+    } else
+      return Container();
   }
 
   ///Construct cell for List View
