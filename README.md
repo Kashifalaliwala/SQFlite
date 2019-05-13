@@ -1,6 +1,10 @@
 # Flutter SQFlite
 
-<img src="https://user-images.githubusercontent.com/30998350/54428205-bdd86580-4742-11e9-9067-7be32f027023.png" alt="alt text" width="250" height="450">
+<p>
+<img src="https://user-images.githubusercontent.com/30998350/54428205-bdd86580-4742-11e9-9067-7be32f027023.png" alt="Android" width="250" height="450">&nbsp&nbsp&nbsp
+<img src="https://user-images.githubusercontent.com/30998350/57618981-6a4b9200-75a2-11e9-9a53-b82d07102a6e.png" alt="Ios" width="250" height="450">&nbsp&nbsp&nbsp
+<img src="https://user-images.githubusercontent.com/30998350/57619473-a2070980-75a3-11e9-9bdd-b1fd1751c4d9.png" alt="Edit" width="250" height="450">
+</p>
 
 ## Getting Started
 
