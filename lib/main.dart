@@ -39,6 +39,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   bool flag = false;
+  bool insertItem = false;
   final teNameController = TextEditingController();
   final tePhoneController = TextEditingController();
   final teEmailController = TextEditingController();
@@ -64,17 +65,29 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    print("INIT");
     _scrollController = new ScrollController();
     _scrollController.addListener(() => setState(() {}));
   }
 
   Widget _buildFab() {
     bool visibilityFlag = true;
+    double max;
+    double currentScroll;
+
     if (_scrollController.hasClients) {
-      visibilityFlag = false;
-      if (_scrollController.position.userScrollDirection ==
-          ScrollDirection.forward) {
+      //visibilityFlag = true;
+
+      max = _scrollController.position.maxScrollExtent;
+      double min = _scrollController.position.minScrollExtent;
+      currentScroll = _scrollController.position.pixels;
+
+      if ((min == currentScroll) &&
+          (_scrollController.position.userScrollDirection ==
+              ScrollDirection.idle)) {
         visibilityFlag = true;
+      } else if (max == currentScroll) {
+        visibilityFlag = false;
       }
     }
 
@@ -106,7 +119,7 @@ class _MyHomePageState extends State<MyHomePage> {
         Navigator.of(context).pop();
         showtoast("Data Saved successfully");
         setState(() {
-          getAllUser();
+          flag = false;
         });
       });
     } else {
@@ -126,16 +139,16 @@ class _MyHomePageState extends State<MyHomePage> {
       user.phone = tePhoneController.text;
       user.email = teEmailController.text;
       var dbHelper = Helper();
-      dbHelper.insert(user);
-      teNameController.text = "";
-      tePhoneController.text = "";
-      teEmailController.text = "";
-      Navigator.of(context).pop();
-      setState(() {
-        getAllUser();
+      dbHelper.insert(user).then((value) {
+        teNameController.text = "";
+        tePhoneController.text = "";
+        teEmailController.text = "";
+        Navigator.of(context).pop();
+        showtoast("Successfully Added Data");
+        setState(() {
+          insertItem = true;
+        });
       });
-
-      showtoast("Successfully Added Data");
     } else {
 //    If all data are not valid then start auto validation.
       setState(() {
@@ -151,13 +164,19 @@ class _MyHomePageState extends State<MyHomePage> {
       tePhoneController.text = user.phone;
       teEmailController.text = user.email;
       flag = true;
+    } else {
+      flag = false;
+      teNameController.text = "";
+      tePhoneController.text = "";
+      teEmailController.text = "";
     }
+
     showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(32.0))),
+                borderRadius: BorderRadius.all(Radius.circular(25.0))),
             contentPadding: EdgeInsets.only(top: 10.0),
             content: Container(
               width: 300.0,
@@ -172,7 +191,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     children: <Widget>[
                       Text(
                         flag ? "Edit User" : "Add User",
-                        style: TextStyle(fontSize: 24.0),
+                        style: TextStyle(fontSize: 28.0),
                       ),
                     ],
                   ),
@@ -242,8 +261,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       decoration: BoxDecoration(
                         color: Color(0xff00bfa5),
                         borderRadius: BorderRadius.only(
-                            bottomLeft: Radius.circular(32.0),
-                            bottomRight: Radius.circular(32.0)),
+                            bottomLeft: Radius.circular(25.0),
+                            bottomRight: Radius.circular(25.0)),
                       ),
                       child: Text(
                         flag ? "Edit User" : "Add User",
@@ -308,10 +327,14 @@ class _MyHomePageState extends State<MyHomePage> {
   ///Fetch data from database
   Future<List<User>> _getData() async {
     var dbHelper = Helper();
-
     await dbHelper.getAllUsers().then((value) {
       items = value;
+      if (insertItem) {
+        _listKey.currentState.insertItem(values.length);
+        insertItem = false;
+      }
     });
+
     return items;
   }
 
@@ -337,91 +360,115 @@ class _MyHomePageState extends State<MyHomePage> {
     return SizeTransition(
       sizeFactor: animation,
       child: Card(
-        color: Color.fromRGBO(240, 240, 240, 10.0),
         child: ListTile(
-            leading: Column(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                CircleAvatar(
-                  radius: 40.0,
-                  backgroundColor: Colors.brown.shade800,
-                  child: Text(
-                    values.name.substring(0, 1).toUpperCase(),
-                    style: TextStyle(fontSize: 35, color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-            onTap: () => onItemClick(values),
-            title: Column(
-              children: <Widget>[
-                Padding(padding: EdgeInsets.fromLTRB(0.0, 10.0, 0.0, 5.0)),
-                new Row(
-                  children: <Widget>[
-                    Icon(Icons.account_circle),
-                    Padding(padding: EdgeInsets.fromLTRB(0.0, 0.0, 5.0, 0.0)),
-                    new InkWell(
+          onTap: () => onItemClick(values),
+          title: Row(
+            children: <Widget>[
+              Column(
+                children: <Widget>[
+                  Container(
+                    child: CircleAvatar(
+                      radius: 30.0,
+                      backgroundColor: Colors.brown.shade800,
                       child: Text(
-                        values.name,
-                        style: TextStyle(
-                            fontSize: 18.0,
-                            fontStyle: FontStyle.normal,
-                            color: Colors.black),
-                        textAlign: TextAlign.left,
-                        maxLines: 1,
+                        values.name.substring(0, 1).toUpperCase(),
+                        style: TextStyle(fontSize: 35, color: Colors.white),
                       ),
                     ),
-                  ],
-                ),
-                Padding(padding: EdgeInsets.fromLTRB(0.0, 5.0, 0.0, 5.0)),
-                new Row(
-                  children: <Widget>[
-                    Icon(Icons.phone),
-                    Padding(padding: EdgeInsets.fromLTRB(0.0, 0.0, 5.0, 0.0)),
-                    new InkWell(
-                      child: new Text(
-                        values.phone.toString(),
-                        style: TextStyle(
-                          fontSize: 18.0,
-                          color: Colors.black,
+                  )
+                ],
+              ),
+              Padding(padding: EdgeInsets.fromLTRB(5.0, 0.0, 0.0, 0.0)),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Padding(padding: EdgeInsets.fromLTRB(10.0, 10.0, 0.0, 5.0)),
+                  new Row(
+                    children: <Widget>[
+                      Icon(Icons.account_circle),
+                      Padding(padding: EdgeInsets.fromLTRB(0.0, 0.0, 5.0, 0.0)),
+                      new InkWell(
+                        child: Container(
+                          constraints: new BoxConstraints(
+                              maxWidth:
+                                  MediaQuery.of(context).size.width - 200),
+                          child: Text(
+                            values.name,
+                            style: TextStyle(
+                                fontSize: 18.0,
+                                fontStyle: FontStyle.normal,
+                                color: Colors.black),
+                            maxLines: 2,
+                            softWrap: true,
+                          ),
                         ),
-                        textAlign: TextAlign.left,
-                        maxLines: 1,
                       ),
-                    ),
-                  ],
-                ),
-                Padding(padding: EdgeInsets.fromLTRB(0.0, 5.0, 0.0, 5.0)),
-                new Row(
-                  children: <Widget>[
-                    Icon(Icons.email),
-                    Padding(padding: EdgeInsets.fromLTRB(0.0, 0.0, 5.0, 0.0)),
-                    new InkWell(
-                      child: new Text(
-                        values.email.toString(),
-                        style: TextStyle(fontSize: 18.0, color: Colors.black),
-                        textAlign: TextAlign.left,
-                        maxLines: 1,
+                    ],
+                  ),
+                  Padding(padding: EdgeInsets.fromLTRB(10.0, 5.0, 0.0, 5.0)),
+                  new Row(
+                    children: <Widget>[
+                      Icon(Icons.phone),
+                      Padding(padding: EdgeInsets.fromLTRB(0.0, 0.0, 5.0, 0.0)),
+                      new InkWell(
+                        child: new Text(
+                          values.phone.toString(),
+                          style: TextStyle(
+                            fontSize: 18.0,
+                            color: Colors.black,
+                          ),
+                          textAlign: TextAlign.left,
+                          maxLines: 2,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                Padding(padding: EdgeInsets.fromLTRB(0.0, 5.0, 0.0, 10.0)),
-              ],
-            ),
-            trailing: Column(
-              children: <Widget>[
-                IconButton(
+                    ],
+                  ),
+                  Padding(padding: EdgeInsets.fromLTRB(10.0, 5.0, 0.0, 5.0)),
+                  new Row(
+                    children: <Widget>[
+                      Icon(Icons.email),
+                      Padding(padding: EdgeInsets.fromLTRB(0.0, 0.0, 5.0, 0.0)),
+                      new InkWell(
+                        child: Container(
+                          constraints: new BoxConstraints(
+                              maxWidth:
+                                  MediaQuery.of(context).size.width - 200),
+                          child: new Text(
+                            values.email.toString(),
+                            style:
+                                TextStyle(fontSize: 18.0, color: Colors.black),
+                            textAlign: TextAlign.left,
+                            maxLines: 2,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Padding(padding: EdgeInsets.fromLTRB(10.0, 5.0, 0.0, 10.0)),
+                ],
+              ),
+            ],
+          ),
+          trailing: Column(
+            children: <Widget>[
+              Flexible(
+                fit: FlexFit.tight,
+                child: IconButton(
                     color: Colors.black,
                     icon: new Icon(Icons.edit),
                     onPressed: () => onEdit(values, index)),
-                IconButton(
+              ),
+              Flexible(
+                fit: FlexFit.tight,
+                child: IconButton(
                     color: Colors.black,
                     icon: new Icon(Icons.delete),
                     onPressed: () => onDelete(values, index)),
-              ],
-            )),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
